@@ -30,6 +30,16 @@ export const payMyFeeApi = async (payload) => {
   return res.data;
 };
 
+export const getFeesApi = async () => {
+  const res = await API.get("/hostel/fees");
+  return res.data;
+};
+
+export const updateFeeStatusApi = async (id, payload) => {
+  const res = await API.put(`/hostel/fees/${id}/status`, payload);
+  return res.data;
+};
+
 export const getNoticesApi = async () => {
   const res = await API.get("/hostel/notices");
   return res.data;

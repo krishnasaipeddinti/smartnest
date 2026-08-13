@@ -1,15 +1,62 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PageShell from "../../components/common/PageShell";
-import { getFees } from "../../utils/auth";
-import { updateFeeStatus } from "../../utils/appData";
+import { getFeesApi, updateFeeStatusApi } from "../../services/hostelApi";
 
 const WardenFeesPage = () => {
-  const [fees, setFees] = useState(getFees());
+  const [fees, setFees] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const handleStatusChange = (id, status) => {
-    const updatedFees = updateFeeStatus(id, status);
-    setFees(updatedFees);
+  useEffect(() => {
+    const fetchFees = async () => {
+      try {
+        setLoading(true);
+        const data = await getFeesApi();
+        setFees(data || []);
+      } catch (err) {
+        setError(err.message || "Failed to fetch fees");
+        console.error("Error fetching fees:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFees();
+  }, []);
+
+  const handleStatusChange = async (id, status) => {
+    try {
+      const updatedFee = await updateFeeStatusApi(id, { status });
+      setFees(
+        fees.map((fee) => (fee.id === id ? updatedFee : fee))
+      );
+    } catch (err) {
+      console.error("Error updating fee status:", err);
+      alert("Failed to update fee status");
+    }
   };
+
+  if (loading) {
+    return (
+      <PageShell
+        title="Fees Access"
+        subtitle="Review student fee records and update payment status."
+      >
+        <div className="text-center text-slate-400">Loading fees...</div>
+      </PageShell>
+    );
+  }
+
+  if (error) {
+    return (
+      <PageShell
+        title="Fees Access"
+        subtitle="Review student fee records and update payment status."
+      >
+        <div className="text-center text-red-400">Error: {error}</div>
+      </PageShell>
+    );
+  }
 
   return (
     <PageShell
@@ -17,7 +64,7 @@ const WardenFeesPage = () => {
       subtitle="Review student fee records and update payment status."
     >
       <div className="space-y-4">
-        {fees.length > 0 ? (
+        {fees && fees.length > 0 ? (
           fees.map((fee) => (
             <div key={fee.id} className="glass rounded-3xl p-5 shadow-2xl">
               <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">

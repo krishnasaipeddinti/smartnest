@@ -1,7 +1,9 @@
 import axios from "axios";
 
+const baseURL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
 const API = axios.create({
-  baseURL: "https://smartnest-production-fe64.up.railway.app/api",
+  baseURL,
 });
 
 API.interceptors.request.use(

@@ -335,6 +335,70 @@ const payStudentFee = async (req, res) => {
   }
 };
 
+const getAllFees = async (req, res) => {
+  try {
+    if (!["admin", "warden"].includes(req.user.role)) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const fees = await allAsync(`SELECT * FROM fees ORDER BY id DESC`);
+    const normalized = fees.map(normalizeFee);
+    res.json(normalized);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const updateFeeStatus = async (req, res) => {
+  try {
+    if (!["admin", "warden"].includes(req.user.role)) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!status) {
+      return res.status(400).json({ message: "Status is required" });
+    }
+
+    const fee = await getAsync(`SELECT * FROM fees WHERE id = ?`, [id]);
+    if (!fee) {
+      return res.status(404).json({ message: "Fee record not found" });
+    }
+
+    await runAsync(`UPDATE fees SET status = ? WHERE id = ?`, [status, id]);
+
+    const updatedFee = await getAsync(`SELECT * FROM fees WHERE id = ?`, [id]);
+
+    await runAsync(
+      `INSERT INTO notifications (recipientRole, title, message, isRead)
+       VALUES (?, ?, ?, ?)`,
+      [
+        "warden",
+        "Fee Status Updated",
+        `Fee status for ${fee.studentName} has been updated to ${status}.`,
+        0,
+      ]
+    );
+
+    await runAsync(
+      `INSERT INTO notifications (recipientRole, title, message, isRead)
+       VALUES (?, ?, ?, ?)`,
+      [
+        "student",
+        "Fee Status Updated",
+        `Your fee status has been updated to ${status}.`,
+        0,
+      ]
+    );
+
+    res.json(normalizeFee(updatedFee));
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 /* ---------------------- Notices ---------------------- */
 
 const getStudentNotices = async (req, res) => {
@@ -815,6 +879,8 @@ module.exports = {
   assignRoomToStudent,
   getStudentFee,
   payStudentFee,
+  getAllFees,
+  updateFeeStatus,
   getStudentNotices,
   addNotice,
   updateNotice,

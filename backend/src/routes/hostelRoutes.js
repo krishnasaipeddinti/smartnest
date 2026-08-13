@@ -8,6 +8,8 @@ const {
   assignRoomToStudent,
   getStudentFee,
   payStudentFee,
+  getAllFees,
+  updateFeeStatus,
   getStudentNotices,
   addNotice,
   updateNotice,
@@ -36,6 +38,8 @@ router.post("/rooms/assign", protect, assignRoomToStudent);
 
 router.get("/fees/me", protect, getStudentFee);
 router.post("/fees/pay", protect, payStudentFee);
+router.get("/fees", protect, getAllFees);
+router.put("/fees/:id/status", protect, updateFeeStatus);
 
 router.get("/notices", protect, getStudentNotices);
 router.post("/notices", protect, addNotice);
